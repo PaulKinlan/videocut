@@ -51,11 +51,15 @@
 
       const secondsToTimeCode = function(timeInSeconds) {
 
+        function pad(number) {
+            return (number <= 9) ? '0' + number : number;
+        }
+
         const hours = Math.floor(timeInSeconds / 3600)
         const minutes = Math.floor((timeInSeconds - (hours * 3600)) / 60) % 60;
         const seconds = timeInSeconds % 60;
 
-        return `${hours}:${minutes}:${seconds}`;
+        return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
       };
 
       const prepare = function(file) {
