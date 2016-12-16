@@ -49,10 +49,22 @@
         });
       };
 
+      const secondsToTimeCode = function(timeInSeconds) {
+
+        const hours = Math.floor(timeInSeconds / 3600)
+        const minutes = Math.floor((timeInSeconds - (hours * 3600)) / 60) % 60;
+        const seconds = timeInSeconds % 60;
+
+        return `${hours}:${minutes}:${seconds}`;
+      };
+
       const prepare = function(file) {
         document.body.classList.add('working');
         let urlToVideo = URL.createObjectURL(file);
         let inputVideo = document.getElementById('inputVideo');
+        inputVideo.onloadedmetadata = function() {
+          endTimeEl.value = secondsToTimeCode(inputVideo.duration);
+        };
 
         inputVideo.src = urlToVideo;
 
@@ -184,9 +196,11 @@
     <div id="output">
       <div id="preview">
         <video id="inputVideo"></video>
+        <div id="videoControls">
         <input type="text" id="startTime" value="00:00:00">
         <input type="text" id="endTime" value="00:00:01">
         <button id="trim">Trim</button>
+        </div>
       </div>
       <div id="outputlog">
         <pre id="log"></pre>

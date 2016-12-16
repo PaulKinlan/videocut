@@ -109,6 +109,11 @@ body.working #videoFile {
   height: 100%;
 }
 
+#videoControls {
+  width: initial !important;
+  max-width: initial !important;
+}
+
 #outputlog {
   position: relative;
   display: flex;

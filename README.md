@@ -1,2 +1,2 @@
-Accepts a video file as input and will put an Android Device
-Frame around it.
+Accepts a video file as input and will trim off the start and end to a desired
+timecode.
