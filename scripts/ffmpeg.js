@@ -14,18 +14,20 @@ let ffmpegEncoder = function(encoderArgs, files) {
     videoResolve = resolve;
   });
 
-  this.run = function(files) {
+  this.run = function(files, startTime, endTime) {
     let args = ['-y']
               .concat((encoderArgs || []))
               .concat([
+                '-ss', startTime,
                 '-i', files[0].name,
-                '-i', files[1].name,
-                '-filter_complex', '[1:v]scale=480:-1[scaled_overlay],[0:v][scaled_overlay]overlay=x=(main_w-overlay_w)/2:y=(main_h-overlay_h)/2',
+                '-to', endTime,
+                '-c', 'copy',
+                '-copyts',
                 'output.mp4'
               ]);
- 
+
     const idealheap = 1024 * 1024 * 1024;
-  
+
     worker.postMessage({
         type: "run",
         arguments: args,

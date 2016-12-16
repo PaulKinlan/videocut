@@ -1,7 +1,7 @@
 <html>
   <head>
-    <title>Android Device Framer</title>
-    <meta name="description" content="Accepts an Android Screen recording and will put an Android Device Frame around it.">
+    <title>Time videos</title>
+    <meta name="description" content="Trims Videos">
     <meta name="viewport" content="width=device-width">
     <meta name="twitter:creator" content="@Paul_Kinlan">
     <script type="application/ld+json">
@@ -33,6 +33,10 @@
 
       const ffmpeg = new ffmpegEncoder();
       let fileInput;
+      let startTimeEl;
+      let endTimeEl;
+      let trimBtn;
+      let currentFile;
 
       let loadFile = function(file) {
         return new Promise(function(resolve, reject) {
@@ -44,15 +48,17 @@
         });
       };
 
-      const backgroundImageRequest = fetch('./assets/n6-background.mp4');
-
-      const start = function(file) {
+      const prepare = function(file) {
         document.body.classList.add('working');
         let urlToVideo = URL.createObjectURL(file);
         let inputVideo = document.getElementById('inputVideo');
 
         inputVideo.src = urlToVideo;
-        
+
+        return file;
+      }
+
+      const start = function(file) {
 
         ffmpeg.videoReady.then(function() {
           // the video has completed processing
@@ -72,29 +78,33 @@
         })
         .then(function(arrayBuffer) {
           // We have the file that the user has input, now load the
-          backgroundImageRequest.then(function(response) {
-            return response.arrayBuffer();
-          })
-          .then(function(responsebuffer) {
-            ffmpeg.run([
-              {name: 'n6-background.mp4', data: responsebuffer},
-              {name: file.name, data: arrayBuffer}
-              ]
-            );
-          });
+          ffmpeg.run([
+            {name: file.name, data: arrayBuffer}
+            ],
+            startTimeEl.value,
+            endTimeEl.value
+          );
         });
       }
 
       onload = function() {
-
         ffmpeg.ready.then(function() {
           document.body.classList.remove('loading');
         });
 
         fileInput = document.getElementById("videoFile");
         fileInput.onchange = function(e) {
-          start(e.target.files[0]);
+          currentFile = e.target.files[0];
         };
+
+        startTimeEl = document.getElementById("startTime");
+        endTimeEl = document.getElementById("endTime");
+        trimBtn = document.getElementById("trim");
+
+        trimBtn.addEventListener("click", function() {
+          start(currentFile);
+          prepare(currentFile);
+        });
       };
 
       ffmpeg.videoReady.then(function(data) {
@@ -121,7 +131,7 @@
           e.preventDefault(); // Necessary. Allows us to drop.
         }
 
-        if(e.dataTransfer.items[0].type.indexOf('video/') != 0 
+        if(e.dataTransfer.items[0].type.indexOf('video/') != 0
            && e.dataTransfer.files[0].type.indexOf('video/') !=0) {
           document.body.classList.add('badfile');
           return false;
@@ -158,7 +168,8 @@
           return false;
         }
 
-        start(e.dataTransfer.files[0]);
+        currentFile = e.dataTransfer.files[0];
+        prepare(currentFile);
 
         return false;
       };
@@ -173,6 +184,9 @@
     <div id="output">
       <div id="preview">
         <video id="inputVideo"></video>
+        <input type="text" id="startTime" value="00:00:00">
+        <input type="text" id="endTime" value="00:00:01">
+        <button id="trim">Trim</button>
       </div>
       <div id="outputlog">
         <pre id="log"></pre>
