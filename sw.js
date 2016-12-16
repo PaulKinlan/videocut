@@ -25,9 +25,7 @@ self.addEventListener('install', e => {
         './index.html',
         './css/main.css',
         './scripts/ffmpeg.js',
-        './scripts/ffmpeg-worker-mp4.js',
-        './assets/n6-background.png',
-        './assets/n6-background.mp4'
+        './scripts/ffmpeg-worker-mp4.js'
       ])
       .then(() => self.skipWaiting());
     })
