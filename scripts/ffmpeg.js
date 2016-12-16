@@ -14,15 +14,19 @@ let ffmpegEncoder = function(encoderArgs, files) {
     videoResolve = resolve;
   });
 
+  this.reset = function() {
+    this.videoReady = new Promise(function(resolve, reject) {
+      videoResolve = resolve;
+    });
+  }.bind(this);
+
   this.run = function(files, startTime, endTime) {
     let args = ['-y']
               .concat((encoderArgs || []))
               .concat([
-                '-ss', startTime,
                 '-i', files[0].name,
+                '-ss', startTime,
                 '-to', endTime,
-                '-c', 'copy',
-                '-copyts',
                 'output.mp4'
               ]);
 

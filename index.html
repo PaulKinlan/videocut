@@ -32,6 +32,7 @@
       }
 
       const ffmpeg = new ffmpegEncoder();
+
       let fileInput;
       let startTimeEl;
       let endTimeEl;
@@ -59,13 +60,17 @@
       }
 
       const start = function(file) {
+        ffmpeg.reset()
 
-        ffmpeg.videoReady.then(function() {
+        ffmpeg.videoReady.then(function(data) {
           // the video has completed processing
           document.body.classList.remove('working');
+          var buffer = data.MEMFS[0].data;
+          download(new Blob( [ buffer ], { type: "video/mp4" } ));
         });
 
         const logEl = document.getElementById('log');
+        logEl.innerText = '';
 
         ffmpeg.stderr = function(msg) {
           logEl.innerText += msg.data + "\n";
@@ -106,11 +111,6 @@
           prepare(currentFile);
         });
       };
-
-      ffmpeg.videoReady.then(function(data) {
-        var buffer = data.MEMFS[0].data;
-        download(new Blob( [ buffer ], { type: "video/mp4" } ));
-      });
 
       function download(blob) {
         var url = window.URL.createObjectURL(blob);
