@@ -1,5 +1,5 @@
 {
-  "name": "devicefram.es",
+  "name": "videocutter",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -7,7 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
-  "license": "ISC",
+  "license": "Apache2",
   "dependencies": {
     "ffmpeg.js": "^3.1.9000"
   }

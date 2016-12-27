@@ -1,6 +1,6 @@
 {
-  "name": "Device Framer",
-  "short_name": "Device Framer",
+  "name": "Video Trimmer",
+  "short_name": "Video Trimmer",
   "start_url": "./index.html",
   "icons": [
     {
