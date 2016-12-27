@@ -122,6 +122,10 @@
 
       const selectTime = function(e) {
         var element = e.target;
+        startTimeEl.classList.remove('editing');
+        endTimeEl.classList.remove('editing');
+
+        element.classList.add('editing');
         // Position the video to the current time
         inputVideo.currentTime = timeCodeToSeconds(element.value);
         // Only one text box will

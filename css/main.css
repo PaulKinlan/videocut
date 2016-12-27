@@ -85,6 +85,14 @@ body.picking #videoFile, body.working #videoFile {
   display: none;
 }
 
+#startTime.editing {
+  outline: solid #1cca23 1px;
+}
+
+#endTime.editing {
+  outline: solid #1cca23 1px;
+}
+
 #output {
   display: none;
   position: relative;
