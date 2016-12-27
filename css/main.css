@@ -57,19 +57,31 @@ input[type=file] {
   display: none;
 }
 
-body.working #working {
-  display: block;
-}
-
-body.working #output {
-  display: flex;
-}
-
-body.working label[for=videoFile] {
+#selecttime {
   display: none;
 }
 
-body.working #videoFile {
+body.picking #selecttime {
+  display: block;
+}
+
+body.picking #working {
+  display: none;
+}
+
+body.working #selecttime {
+  display: block;
+}
+
+body.picking #output, body.working #output {
+  display: flex;
+}
+
+body.picking label[for=videoFile], body.working label[for=videoFile] {
+  display: none;
+}
+
+body.picking #videoFile, body.working #videoFile {
   display: none;
 }
 

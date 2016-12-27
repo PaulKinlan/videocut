@@ -38,6 +38,7 @@
       let endTimeEl;
       let trimBtn;
       let currentFile;
+      let inputVideo = document.getElementById('inputVideo');
 
       let loadFile = function(file) {
         return new Promise(function(resolve, reject) {
@@ -62,10 +63,20 @@
         return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
       };
 
+      const timeCodeToSeconds = function(timeCode) {
+        let time;
+        timeParts = timeCode.split(':')
+        // This is not robust.
+
+        return (parseFloat(timeParts[2])
+               + parseInt(timeParts[1] * 60)
+               + parseInt (timeParts[0] * 3600));
+      };
+
       const prepare = function(file) {
-        document.body.classList.add('working');
+        document.body.classList.add('picking');
         let urlToVideo = URL.createObjectURL(file);
-        let inputVideo = document.getElementById('inputVideo');
+        inputVideo = document.getElementById('inputVideo');
         inputVideo.onloadedmetadata = function() {
           endTimeEl.value = secondsToTimeCode(inputVideo.duration);
         };
@@ -76,7 +87,8 @@
       }
 
       const start = function(file) {
-        ffmpeg.reset()
+        ffmpeg.reset();
+        document.body.classList.add('working');
 
         ffmpeg.videoReady.then(function(data) {
           // the video has completed processing
@@ -108,6 +120,22 @@
         });
       }
 
+      const selectTime = function(e) {
+        var element = e.target;
+        // Position the video to the current time
+        inputVideo.currentTime = timeCodeToSeconds(element.value);
+        // Only one text box will
+        inputVideo.ontimeupdate = function() {
+          element.value = secondsToTimeCode(inputVideo.currentTime);
+        };
+      };
+
+      const updateTime = function(e) {
+        var element = e.target;
+        // Position the video to the current time
+        inputVideo.currentTime = timeCodeToSeconds(element.value);
+      };
+
       onload = function() {
         ffmpeg.ready.then(function() {
           document.body.classList.remove('loading');
@@ -116,11 +144,18 @@
         fileInput = document.getElementById("videoFile");
         fileInput.onchange = function(e) {
           currentFile = e.target.files[0];
+          prepare(currentFile);
         };
 
         startTimeEl = document.getElementById("startTime");
         endTimeEl = document.getElementById("endTime");
         trimBtn = document.getElementById("trim");
+
+        startTimeEl.addEventListener('click', selectTime);
+        endTimeEl.addEventListener('click', selectTime);
+
+        startTimeEl.addEventListener('change', updateTime);
+        endTimeEl.addEventListener('change', updateTime);
 
         trimBtn.addEventListener("click", function() {
           start(currentFile);
@@ -196,6 +231,7 @@
     <p id="loading">Loading the system... wait one moment</p>
     <label for="videoFile">Select or drop a video file</label>
     <input type="file" name="videoFile" id="videoFile" accept="video/*">
+    <div id="selecttime">Pick a start time and an end time.</div>
     <div id="working">Encoding video. It may be some time.</div>
     <div id="output">
       <div id="preview">
