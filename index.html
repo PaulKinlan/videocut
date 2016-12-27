@@ -140,6 +140,18 @@
         inputVideo.currentTime = timeCodeToSeconds(element.value);
       };
 
+      const validateStartLessThanEndTimes = function() {
+        const start = timeCodeToSeconds(startTimeEl.value);
+        const end = timeCodeToSeconds(endTimeEl.value);
+
+        return (start < end);
+      };
+
+      const validateWithingConstrains = function(element) {
+        const seconds = timeCodeToSeconds(element.value);
+        return (seconds >= 0 && seconds <= inputVideo.duration);
+      };
+
       onload = function() {
         ffmpeg.ready.then(function() {
           document.body.classList.remove('loading');
