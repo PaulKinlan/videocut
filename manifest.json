@@ -1,6 +1,7 @@
 {
   "name": "Video Trimmer",
   "short_name": "Video Trimmer",
+  "description": "Quickly and easily trim your videos with this simple web app",
   "start_url": "./index.html",
   "icons": [
     {
