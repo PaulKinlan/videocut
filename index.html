@@ -25,6 +25,8 @@
     <meta name="theme-color" content="#FF9800">
     <link rel="manifest" href="./manifest.json">
     <script src="./scripts/ffmpeg.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/comlinkjs@3.0.2/umd/comlink.js"></script>
+
     <script>
       if(navigator.serviceWorker) {
         navigator.serviceWorker.register('./sw.js')
@@ -51,7 +53,7 @@
           fileReader.readAsArrayBuffer(file);
         });
       };
-
+    
       const secondsToTimeCode = function(timeInSeconds) {
 
         function pad(number) {
@@ -66,9 +68,7 @@
       };
 
       const timeCodeToSeconds = function(timeCode) {
-        let time;
-        timeParts = timeCode.split(':')
-        // This is not robust.
+        let timeParts = timeCode.split(':');
 
         return (parseFloat(timeParts[2])
                + parseInt(timeParts[1] * 60)
@@ -82,13 +82,15 @@
         inputVideo.onloadedmetadata = function() {
           endTimeEl.value = secondsToTimeCode(inputVideo.duration);
         };
-
+        inputVideo.ondurationchange = function() {
+          endTimeEl.value = secondsToTimeCode(inputVideo.duration);
+        };
+        console.log('before')
         inputVideo.src = urlToVideo;
+        console.log(inputVideo)
+      };
 
-        return file;
-      }
-
-      const start = function(file) {
+      const start = function(file, startTime, endTime) {
         ffmpeg.reset();
         document.body.classList.add('working');
 
@@ -109,18 +111,27 @@
 
         ffmpeg.ready.then(function() {
           //the framework is ready
+          console.log('getting ready');
           return loadFile(file);
         })
         .then(function(arrayBuffer) {
           // We have the file that the user has input, now load the
+          console.log('ready to run');
           ffmpeg.run([
             {name: file.name, data: arrayBuffer}
             ],
-            startTimeEl.value,
-            endTimeEl.value
+            startTime,
+            endTime
           );
         });
+      };
+      
+      const startExternal = (file, startTime, endTime) => {
+        currentFile = file;
+        prepare(file);
       }
+      
+      Comlink.expose(startExternal, window);
 
       const selectTime = function(e) {
         var element = e.target;
@@ -176,7 +187,7 @@
         endTimeEl.addEventListener('change', updateTime);
 
         trimBtn.addEventListener("click", function() {
-          start(currentFile);
+          start(currentFile, startTimeEl.value, endTimeEl.value);
         });
       };
 
@@ -252,7 +263,7 @@
     <div id="working">Encoding video. It may be some time.</div>
     <div id="output">
       <div id="preview">
-        <video id="inputVideo" controls></video>
+        <video id="inputVideo" controls preload=auto></video>
         <div id="videoControls">
         <input type="text" id="startTime" value="00:00:00">
         <input type="text" id="endTime" value="00:00:01">

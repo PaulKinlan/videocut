@@ -2,7 +2,7 @@
   "name": "Video Trimmer",
   "short_name": "Video Trimmer",
   "description": "Quickly and easily trim your videos with this simple web app",
-  "start_url": "./index.html",
+  "start_url": "index.html",
   "icons": [
     {
       "src": "./assets/icons/phone-192.png",
@@ -10,7 +10,7 @@
       "sizes": "192x192"
     }
   ],
-  "scope": "/",
+  "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#FF9800",

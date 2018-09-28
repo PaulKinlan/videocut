@@ -20,7 +20,7 @@
 
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open('framer').then(cache => {
+    caches.open('video-cut').then(cache => {
       return cache.addAll([
         './index.html',
         './css/main.css',
@@ -38,8 +38,10 @@ self.addEventListener('activate',  event => {
 
 self.addEventListener('fetch', event => {
   event.respondWith(
-    caches.match(event.request).then(response => {
-      return response || fetch(event.request);
+    caches.open('video-cut').then(cache => {
+      return cache.match(event.request).then(response => {
+        return response || fetch(event.request);
+      })
     })
   );
 });

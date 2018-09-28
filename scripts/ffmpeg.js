@@ -23,12 +23,12 @@ let ffmpegEncoder = function(encoderArgs, files) {
   this.run = function(files, startTime, endTime) {
     let args = ['-y']
               .concat((encoderArgs || []))
-              .concat([
-                '-i', files[0].name,
-                '-ss', startTime,
-                '-to', endTime,
-                'output.mp4'
-              ]);
+              .concat(['-i', files[0].name])
+              .concat((startTime !== undefined) ? ['-ss', startTime] : [])
+              .concat((endTime !== undefined) ? ['-to', endTime] : [])
+              .concat(['output.mp4']);
+    
+    console.log(args);
 
     const idealheap = 1024 * 1024 * 1024;
 
