@@ -1,0 +1,12 @@
+dependencies:
+  ffmpeg.js: 3.1.9001
+packages:
+  /ffmpeg.js/3.1.9001:
+    dev: false
+    resolution:
+      integrity: sha1-NWm5kwJ2Z/7qIqKm3CsTUPu5+cE=
+registry: 'https://registry.npmjs.org/'
+shrinkwrapMinorVersion: 9
+shrinkwrapVersion: 3
+specifiers:
+  ffmpeg.js: ^3.1.9000
