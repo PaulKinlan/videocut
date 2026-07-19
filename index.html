@@ -1,288 +1,107 @@
-<html>
-  <head>
-    <title>Video Trimmer</title>
-    <meta name="description" content="Quickly crop and trim your videos online">
-    <meta name="viewport" content="width=device-width">
-    <meta name="twitter:creator" content="@Paul_Kinlan">
-    <script type="application/ld+json">
-      {
-        "@context": "http://schema.org",
-        "@type": "Person",
-        "name": "Paul Kinlan",
-        "url": "https://paul.kinlan.me/",
-        "sameAs": [
-          "https://twitter.com/paul_kinlan",
-          "https://www.instagram.com/paul_kinlan/",
-          "https://www.linkedin.com/in/paulkinlan",
-          "https://plus.google.com/+paulkinlan",
-          "https://github.com/paulkinlan",
-          "https://en.wikipedia.org/wiki/Paul_Kinlan",
-          "https://medium.com/@paul_kinlan"
-        ]
-      }
-    </script>
-    <link rel="stylesheet" href="./css/main.css">
-    <meta name="theme-color" content="#FF9800">
-    <link rel="manifest" href="./manifest.json">
-    <script src="./scripts/ffmpeg.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/comlinkjs@3.0.2/umd/comlink.js"></script>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VideoCut — trim video privately in your browser</title>
+  <meta name="description" content="Choose a video, mark the section you want, and save a trimmed WebM copy. Your video stays on your device.">
+  <meta name="theme-color" content="#101218">
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="stylesheet" href="./css/main.css">
+  <script type="module" src="./scripts/app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#workspace">Skip to editor</a>
+  <header class="site-header">
+    <a class="brand" href="./" aria-label="VideoCut home"><span aria-hidden="true">◩</span> VideoCut</a>
+    <p><span class="privacy-dot" aria-hidden="true"></span>Local and private</p>
+  </header>
 
-    <script>
-      if(navigator.serviceWorker) {
-        navigator.serviceWorker.register('./sw.js')
-          .then(() => {
-            console.log('installed');
-          })
-      }
+  <main>
+    <section class="hero" aria-labelledby="title">
+      <p class="eyebrow">A small, private video tool</p>
+      <h1 id="title">Keep the good bit.</h1>
+      <p>Trim a section from a video without uploading it anywhere. Choose a file, set the in and out points, then record the selection as a new WebM video.</p>
+    </section>
 
-      const ffmpeg = new ffmpegEncoder();
+    <section id="workspace" class="workspace" aria-labelledby="editor-title">
+      <div class="section-heading">
+        <div><p class="step">01</p><h2 id="editor-title">Choose a video</h2></div>
+        <p>MP4, WebM, MOV, or any format your browser can play.</p>
+      </div>
 
-      let fileInput;
-      let startTimeEl;
-      let endTimeEl;
-      let trimBtn;
-      let currentFile;
-      let inputVideo = document.getElementById('inputVideo');
+      <label class="drop-zone" id="drop-zone" for="video-file">
+        <span class="drop-icon" aria-hidden="true">＋</span>
+        <strong>Drop a video here</strong>
+        <span>or choose one from your device</span>
+        <span class="file-button">Choose video</span>
+        <input id="video-file" type="file" accept="video/*">
+      </label>
+      <p id="file-error" class="message message--error" role="alert" hidden></p>
 
-      let loadFile = function(file) {
-        return new Promise(function(resolve, reject) {
-          const fileReader = new FileReader();
-          fileReader.onload = function(e) {
-            resolve(this.result);
-          };
-          fileReader.readAsArrayBuffer(file);
-        });
-      };
-    
-      const secondsToTimeCode = function(timeInSeconds) {
+      <div id="editor" class="editor" hidden>
+        <div class="video-shell">
+          <video id="video" controls playsinline preload="metadata"></video>
+          <div class="video-meta"><strong id="file-name"></strong><span id="file-details"></span></div>
+        </div>
 
-        function pad(number) {
-            return (number <= 9) ? '0' + number : number;
-        }
+        <div class="trim-panel">
+          <div class="section-heading compact">
+            <div><p class="step">02</p><h2>Mark your clip</h2></div>
+            <p id="clip-summary" aria-live="polite"></p>
+          </div>
 
-        const hours = Math.floor(timeInSeconds / 3600)
-        const minutes = Math.floor((timeInSeconds - (hours * 3600)) / 60) % 60;
-        const seconds = timeInSeconds % 60;
+          <div class="timeline" aria-label="Trim range">
+            <div class="range-track" aria-hidden="true"><span id="selected-range"></span></div>
+            <input id="start-range" type="range" min="0" max="1" step="0.01" value="0" aria-label="Clip start">
+            <input id="end-range" type="range" min="0" max="1" step="0.01" value="1" aria-label="Clip end">
+          </div>
 
-        return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
-      };
+          <div class="time-fields">
+            <label>Start <input id="start-time" type="number" min="0" step="0.001" inputmode="decimal"><span>seconds</span></label>
+            <button id="set-start" class="quiet-button" type="button">Use playhead</button>
+            <label>End <input id="end-time" type="number" min="0" step="0.001" inputmode="decimal"><span>seconds</span></label>
+            <button id="set-end" class="quiet-button" type="button">Use playhead</button>
+          </div>
 
-      const timeCodeToSeconds = function(timeCode) {
-        let timeParts = timeCode.split(':');
-
-        return (parseFloat(timeParts[2])
-               + parseInt(timeParts[1] * 60)
-               + parseInt (timeParts[0] * 3600));
-      };
-
-      const prepare = function(file) {
-        document.body.classList.add('picking');
-        let urlToVideo = URL.createObjectURL(file);
-        inputVideo = document.getElementById('inputVideo');
-        inputVideo.onloadedmetadata = function() {
-          endTimeEl.value = secondsToTimeCode(inputVideo.duration);
-        };
-        inputVideo.ondurationchange = function() {
-          endTimeEl.value = secondsToTimeCode(inputVideo.duration);
-        };
-        console.log('before')
-        inputVideo.src = urlToVideo;
-        console.log(inputVideo)
-      };
-
-      const start = function(file, startTime, endTime) {
-        ffmpeg.reset();
-        document.body.classList.add('working');
-
-        ffmpeg.videoReady.then(function(data) {
-          // the video has completed processing
-          document.body.classList.remove('working');
-          var buffer = data.MEMFS[0].data;
-          download(new Blob( [ buffer ], { type: "video/mp4" } ));
-        });
-
-        const logEl = document.getElementById('log');
-        logEl.innerText = '';
-
-        ffmpeg.stderr = function(msg) {
-          logEl.innerText += msg.data + "\n";
-          logEl.scrollTop = logEl.scrollHeight;
-        };
-
-        ffmpeg.ready.then(function() {
-          //the framework is ready
-          console.log('getting ready');
-          return loadFile(file);
-        })
-        .then(function(arrayBuffer) {
-          // We have the file that the user has input, now load the
-          console.log('ready to run');
-          ffmpeg.run([
-            {name: file.name, data: arrayBuffer}
-            ],
-            startTime,
-            endTime
-          );
-        });
-      };
-      
-      const startExternal = (file, startTime, endTime) => {
-        currentFile = file;
-        prepare(file);
-      }
-      
-      Comlink.expose(startExternal, window);
-
-      const selectTime = function(e) {
-        var element = e.target;
-        startTimeEl.classList.remove('editing');
-        endTimeEl.classList.remove('editing');
-
-        element.classList.add('editing');
-        // Position the video to the current time
-        inputVideo.currentTime = timeCodeToSeconds(element.value);
-        // Only one text box will
-        inputVideo.ontimeupdate = function() {
-          element.value = secondsToTimeCode(inputVideo.currentTime);
-        };
-      };
-
-      const updateTime = function(e) {
-        var element = e.target;
-        // Position the video to the current time
-        inputVideo.currentTime = timeCodeToSeconds(element.value);
-      };
-
-      const validateStartLessThanEndTimes = function() {
-        const start = timeCodeToSeconds(startTimeEl.value);
-        const end = timeCodeToSeconds(endTimeEl.value);
-
-        return (start < end);
-      };
-
-      const validateWithingConstrains = function(element) {
-        const seconds = timeCodeToSeconds(element.value);
-        return (seconds >= 0 && seconds <= inputVideo.duration);
-      };
-
-      onload = function() {
-        ffmpeg.ready.then(function() {
-          document.body.classList.remove('loading');
-        });
-
-        fileInput = document.getElementById("videoFile");
-        fileInput.onchange = function(e) {
-          currentFile = e.target.files[0];
-          prepare(currentFile);
-        };
-
-        startTimeEl = document.getElementById("startTime");
-        endTimeEl = document.getElementById("endTime");
-        trimBtn = document.getElementById("trim");
-
-        startTimeEl.addEventListener('click', selectTime);
-        endTimeEl.addEventListener('click', selectTime);
-
-        startTimeEl.addEventListener('change', updateTime);
-        endTimeEl.addEventListener('change', updateTime);
-
-        trimBtn.addEventListener("click", function() {
-          start(currentFile, startTimeEl.value, endTimeEl.value);
-        });
-      };
-
-      function download(blob) {
-        var url = window.URL.createObjectURL(blob);
-        var a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = url;
-        a.download = 'test.mp4';
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(function() {
-          document.body.removeChild(a);
-          window.URL.revokeObjectURL(url);
-        }, 100);
-      }
-
-      ondragover = function(e) {
-        if (e.preventDefault) {
-          e.preventDefault(); // Necessary. Allows us to drop.
-        }
-
-        if(e.dataTransfer.items[0].type.indexOf('video/') != 0
-           && e.dataTransfer.files[0].type.indexOf('video/') !=0) {
-          document.body.classList.add('badfile');
-          return false;
-        }
-
-        document.body.classList.add('goodfile');
-
-        e.dataTransfer.dropEffect = 'move';  // See the section on the DataTransfer object.
-
-        return false;
-      }
-
-      ondragleave = function() {
-        document.body.classList.remove('goodfile');
-        document.body.classList.remove('badfile');
-      }
-
-      ondragend= function() {
-        document.body.classList.remove('goodfile');
-        document.body.classList.remove('badfile');
-      }
-
-      const outputBuffer = new ArrayBuffer();
-
-      ondrop = function(e) {
-        if (e.stopPropagation) {
-          e.stopPropagation(); // stops the browser from redirecting.
-        }
-
-        document.body.classList.remove('badfile');
-        document.body.classList.remove('goodfile');
-
-        if(e.dataTransfer.items[0].type.indexOf('video/') != 0) {
-          return false;
-        }
-
-        currentFile = e.dataTransfer.files[0];
-        prepare(currentFile);
-
-        return false;
-      };
-    </script>
-  </head>
-
-  <body draggable class="loading">
-    <p id="loading">Loading the system... wait one moment</p>
-    <label for="videoFile">Select or drop a video file</label>
-    <input type="file" name="videoFile" id="videoFile" accept="video/*">
-    <div id="selecttime">Pick a start time and an end time.</div>
-    <div id="working">Encoding video. It may be some time.</div>
-    <div id="output">
-      <div id="preview">
-        <video id="inputVideo" controls preload=auto></video>
-        <div id="videoControls">
-        <input type="text" id="startTime" value="00:00:00">
-        <input type="text" id="endTime" value="00:00:01">
-        <button id="trim">Trim</button>
+          <div class="actions">
+            <button id="preview" class="secondary-button" type="button">Preview selection</button>
+            <button id="trim" class="primary-button" type="button">Create trimmed video</button>
+          </div>
+          <p class="note">VideoCut records the selected section in real time using your browser’s media recorder. Timing is close, but not frame-perfect.</p>
+          <p id="editor-error" class="message message--error" role="alert" hidden></p>
         </div>
       </div>
-      <div id="outputlog">
-        <pre id="log"></pre>
-      </div>
-    </div>
-    <script>
-  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
 
-  ga('create', 'UA-88398808-3', 'auto');
-  ga('send', 'pageview');
+      <section id="progress-panel" class="progress-panel" aria-labelledby="progress-title" hidden>
+        <p class="step">03</p>
+        <h2 id="progress-title">Creating your clip</h2>
+        <p id="progress-status" aria-live="polite">Preparing…</p>
+        <progress id="progress" value="0" max="100">0%</progress>
+        <button id="cancel" class="quiet-button" type="button">Cancel</button>
+      </section>
 
-</script>
-  </body>
+      <section id="result" class="result" aria-labelledby="result-title" hidden>
+        <div class="section-heading compact">
+          <div><p class="step">04</p><h2 id="result-title">Your clip is ready</h2></div>
+          <p>Preview it before saving.</p>
+        </div>
+        <video id="output-video" controls playsinline></video>
+        <div class="actions">
+          <a id="download" class="primary-button" download="videocut.webm">Download WebM</a>
+          <button id="start-over" class="secondary-button" type="button">Trim another section</button>
+        </div>
+      </section>
+    </section>
+
+    <section class="how-it-works" aria-labelledby="how-title">
+      <p class="eyebrow">No cloud required</p>
+      <h2 id="how-title">Your file never leaves this tab.</h2>
+      <p>Playback, trimming, and recording happen locally through browser media APIs. Closing the tab clears the working copy.</p>
+    </section>
+  </main>
+
+  <footer><p>Built by <a href="https://paul.kinlan.me/">Paul Kinlan</a>. <a href="https://github.com/PaulKinlan/videocut">View source</a>.</p></footer>
+</body>
 </html>
