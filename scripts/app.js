@@ -108,7 +108,12 @@ async function previewSelection() {
   if (stopPreview) stopPreview();
   const { start, end } = values();
   els.video.currentTime = start;
-  await els.video.play();
+  try {
+    await els.video.play();
+  } catch {
+    showError(els.editorError, "Playback was blocked. Press play once, then preview the selection again.");
+    return;
+  }
   const check = () => { if (els.video.currentTime >= end) { els.video.pause(); cleanup(); } };
   const cleanup = () => { els.video.removeEventListener("timeupdate", check); stopPreview = null; };
   stopPreview = cleanup;
@@ -210,5 +215,9 @@ els.preview.addEventListener("click", previewSelection);
 els.trim.addEventListener("click", createClip);
 els.cancel.addEventListener("click", () => { cancelled = true; if (activeRecorder?.state !== "inactive") activeRecorder.stop(); els.video.pause(); });
 els.startOver.addEventListener("click", () => { els.result.hidden = true; els.editor.scrollIntoView({ block: "start" }); });
-window.addEventListener("beforeunload", () => { if (sourceUrl) URL.revokeObjectURL(sourceUrl); if (outputUrl) URL.revokeObjectURL(outputUrl); });
+window.addEventListener("beforeunload", () => {
+  if (activeRecorder?.state !== "inactive") activeRecorder.stop();
+  if (sourceUrl) URL.revokeObjectURL(sourceUrl);
+  if (outputUrl) URL.revokeObjectURL(outputUrl);
+});
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});

@@ -1,4 +1,4 @@
-const CACHE = "videocut-v7";
+const CACHE = "videocut-v8";
 const ASSETS = ["./", "./index.html", "./css/main.css", "./scripts/app.js", "./manifest.json", "./favicon.svg"];
 
 self.addEventListener("install", (event) => {
